@@ -1,0 +1,10 @@
+transactions:
+  - seed: ""
+    spender_address: ""
+    amount: 1
+    decimals: 18
+
+  - seed: ""
+    spender_address: ""
+    amount: 1
+    decimals: 18
