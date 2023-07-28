@@ -17,7 +17,7 @@ class Client:
 
     def __init__(
             self,
-            private_key: str,
+            seed: str,
             network: Network
     ):
         self.network = network
@@ -25,10 +25,10 @@ class Client:
         self.w3 = Web3(Web3.HTTPProvider(endpoint_uri=self.network.rpc))
         self.w3.eth.account.enable_unaudited_hdwallet_features()
 
-        private_key = self.w3.eth.account.from_mnemonic(private_key)
+        private_key = self.w3.eth.account.from_mnemonic(seed)
         self.private_key = private_key
 
-        self.address = Web3.to_checksum_address(self.w3.eth.account.from_key(private_key=private_key).address)
+        self.address = Web3.to_checksum_address(self.w3.eth.account.from_mnemonic(seed).address)
 
     def get_decimals(self, contract_address: str) -> int:
         return int(self.w3.eth.contract(
@@ -90,7 +90,7 @@ class Client:
             data=None,
             from_=None,
             increase_gas=1.0,
-            value=None,
+            value: Optional[TokenAmount] = None,
             max_priority_fee_per_gas: Optional[int] = None,
             max_fee_per_gas: Optional[int] = None
     ):
@@ -125,7 +125,7 @@ class Client:
             tx_params['gasPrice'] = self.w3.eth.gas_price
 
         if value:
-            tx_params['value'] = value
+            tx_params['value'] = value.Wei
 
         try:
             tx_params['gas'] = int(self.w3.eth.estimate_gas(tx_params) * increase_gas)
