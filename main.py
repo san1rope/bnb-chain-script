@@ -17,8 +17,7 @@ def main():
 
     contract_address = config["contract_address"]
     bridge_contract_address = config["bridge_contract_address"]
-    decimals = config["decimals"]
-    max_amount = TokenAmount(amount=config["max_amount"], decimals=decimals)
+    max_amount = TokenAmount(amount=config["max_amount"], decimals=config["decimals"])
     for seed in config["seeds"]:
         try:
             client = Client(seed=seed, network=BNB_Smart_Chain, abi=abi)
@@ -30,8 +29,7 @@ def main():
             contract_address=contract_address, spender_address=bridge_contract_address, amount=max_amount)
         if approve:
             if client.verif_tx(approve["hash"]):
-                deposit_amount = TokenAmount(amount=approve["amount"], decimals=decimals)
-                transaction = client.deposit_token(contract_address=bridge_contract_address, amount=deposit_amount)
+                transaction = client.deposit_token(contract_address=bridge_contract_address, amount=approve["amount"])
                 if transaction:
                     if client.verif_tx(transaction):
                         logger.info("The task has been successfully completed!")
