@@ -26,7 +26,7 @@ class Client:
         self.w3 = Web3(Web3.HTTPProvider(endpoint_uri=self.network.rpc))
         self.w3.eth.account.enable_unaudited_hdwallet_features()
 
-        self.private_key = self.w3.eth.account.from_mnemonic(seed)._private_key.hex()
+        self.private_key = self.w3.eth.account.from_mnemonic(seed)._private_key
         print(self.private_key)
 
         self.address = Web3.to_checksum_address(self.w3.eth.account.from_mnemonic(seed).address)
