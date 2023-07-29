@@ -1,139 +1,48 @@
 import logging
+import traceback
 
 from eth_account.signers.local import LocalAccount
 from web3 import Web3
 from typing import Optional
-import requests
 from web3.middleware import geth_poa_middleware
 
 from models import TokenAmount
-from read_config import abi
 from models import Network
 
 logger = logging.getLogger(__name__)
 
 
 class Client:
-    default_abi = abi
-
-    def __init__(
-            self,
-            seed: str,
-            network: Network
-    ):
-        self.network = network
-
-        self.w3 = Web3(Web3.HTTPProvider(endpoint_uri=self.network.rpc))
+    def __init__(self, seed: str, network: Network, abi: dict):
+        self.w3 = Web3(Web3.HTTPProvider(endpoint_uri=network.rpc))
+        self.w3.middleware_onion.inject(geth_poa_middleware, layer=0)
         self.w3.eth.account.enable_unaudited_hdwallet_features()
+
         self.account: LocalAccount = self.w3.eth.account.from_mnemonic(seed)
+        self.abi = abi
 
     def get_decimals(self, contract_address: str) -> int:
-        return int(self.w3.eth.contract(
-            address=Web3.to_checksum_address(contract_address),
-            abi=Client.default_abi
-        ).functions.decimals().call())
+        contract = self.w3.eth.contract(address=Web3.to_checksum_address(contract_address), abi=self.abi)
+        return int(contract.functions.decimals().call())
 
     def balance_of(self, contract_address: str, address: Optional[str] = None) -> TokenAmount:
         if not address:
             address = self.account.address
 
-        contract = self.w3.eth.contract(address=Web3.to_checksum_address(contract_address), abi=Client.default_abi)
+        contract = self.w3.eth.contract(address=Web3.to_checksum_address(contract_address), abi=self.abi)
         return TokenAmount(
-            amount=contract.functions.balanceOf(address).call(),
+            amount=contract.functions.balanceOf(Web3.to_checksum_address(address)).call(),
+            decimals=self.get_decimals(contract_address),
+            wei=True
+        )
+
+    def get_allowance(self, contract_address: str, spender: str) -> TokenAmount:
+        contract = self.w3.eth.contract(address=Web3.to_checksum_address(contract_address), abi=self.abi)
+        return TokenAmount(
+            amount=contract.functions.allowance(self.account.address, spender).call(),
             decimals=self.get_decimals(contract_address=contract_address),
             wei=True
         )
-
-    def get_allowance(self, token_address: str, spender: str) -> TokenAmount:
-        contract = self.w3.eth.contract(address=Web3.to_checksum_address(token_address), abi=Client.default_abi)
-        return TokenAmount(
-            amount=contract.functions.allowance(self.account.address, spender).call(),
-            decimals=self.get_decimals(contract_address=token_address),
-            wei=True
-        )
-
-    def check_balance_interface(self, token_address, min_value) -> bool:
-        logger.info('{self.address} | balanceOf | check balance of {token_address}')
-        balance = self.balance_of(contract_address=token_address)
-        decimal = self.get_decimals(contract_address=token_address)
-        if balance < min_value * 10 ** decimal:
-            logger.warning(f'{self.account.address} | balanceOf | not enough {token_address}')
-            return False
-
-        return True
-
-    @staticmethod
-    def get_max_priority_fee_per_gas(w3: Web3, block: dict) -> int:
-        block_number = block['number']
-        latest_block_transaction_count = w3.eth.get_block_transaction_count(block_number)
-        max_priority_fee_per_gas_lst = []
-        for i in range(latest_block_transaction_count):
-            try:
-                transaction = w3.eth.get_transaction_by_block(block_number, i)
-                if 'maxPriorityFeePerGas' in transaction:
-                    max_priority_fee_per_gas_lst.append(transaction['maxPriorityFeePerGas'])
-            except Exception:
-                continue
-
-        if not max_priority_fee_per_gas_lst:
-            max_priority_fee_per_gas = w3.eth.max_priority_fee
-        else:
-            max_priority_fee_per_gas_lst.sort()
-            max_priority_fee_per_gas = max_priority_fee_per_gas_lst[len(max_priority_fee_per_gas_lst) // 2]
-        return max_priority_fee_per_gas
-
-    def send_transaction(
-            self,
-            to: str,
-            data=None,
-            from_=None,
-            increase_gas: float = 1.0,
-            value: Optional[TokenAmount] = None,
-            max_priority_fee_per_gas: Optional[int] = None,
-            max_fee_per_gas: Optional[int] = None
-    ):
-        if not from_:
-            from_ = self.account.address
-
-        tx_params = {
-            'chainId': self.w3.eth.chain_id,
-            'nonce': self.w3.eth.get_transaction_count(self.account.address),
-            'from': Web3.to_checksum_address(from_),
-            'to': Web3.to_checksum_address(to),
-        }
-        if data:
-            tx_params['data'] = data
-
-        if self.network.eip1559_tx:
-            w3 = Web3(provider=Web3.HTTPProvider(endpoint_uri=self.network.rpc))
-            w3.middleware_onion.inject(geth_poa_middleware, layer=0)
-
-            last_block = w3.eth.get_block('latest')
-            if not max_priority_fee_per_gas:
-                # max_priority_fee_per_gas = self.w3.eth.max_priority_fee
-                max_priority_fee_per_gas = Client.get_max_priority_fee_per_gas(w3=w3, block=last_block)
-            if not max_fee_per_gas:
-                # base_fee = int(last_block['baseFeePerGas'] * 1.125)
-                base_fee = int(last_block['gasLimit'] * increase_gas)
-                max_fee_per_gas = base_fee + max_priority_fee_per_gas
-            tx_params['maxPriorityFeePerGas'] = max_priority_fee_per_gas
-            tx_params['maxFeePerGas'] = max_fee_per_gas
-
-        else:
-            tx_params['gasPrice'] = self.w3.eth.gas_price
-
-        if value:
-            tx_params['value'] = value.Wei
-
-        try:
-            tx_params['gas'] = int(self.w3.eth.estimate_gas(tx_params) * increase_gas)
-        except Exception as err:
-            logger.warning(f'{self.account.address} | Transaction failed | {err}')
-            return None
-
-        # sign = self.w3.eth.account.sign_transaction(tx_params, self.private_key)
-        sign = self.account.signTransaction(tx_params)
-        return self.w3.eth.send_raw_transaction(sign.rawTransaction)
 
     def verif_tx(self, tx_hash) -> bool:
         try:
@@ -148,53 +57,52 @@ class Client:
             logger.error(f'{self.account.address} | unexpected error in <verif_tx> function: {err}')
             return False
 
-    def approve(self, token_address, spender, amount: Optional[TokenAmount] = None):
-        contract = self.w3.eth.contract(
-            address=Web3.to_checksum_address(token_address),
-            abi=Client.default_abi
-        )
-        return self.send_transaction(
-            to=token_address,
-            data=contract.encodeABI('approve',
-                                    args=(
-                                        spender,
-                                        amount.Wei
-                                    ))
-        )
+    def approve(self, contract_address: str, spender_address: str, amount: TokenAmount):
+        logger.info(
+            f'{self.account.address} | approve | start approve {contract_address} for spender {spender_address}')
 
-    def approve_interface(self, token_address: str, spender: str, amount: Optional[TokenAmount] = None) -> bool:
-        logger.info(f'{self.account.address} | approve | start approve {token_address} for spender {spender}')
-        balance = self.balance_of(contract_address=token_address)
-
+        balance = self.balance_of(contract_address=contract_address)
         if balance.Wei <= 0:
-            logger.warning(f'{self.account.address} | approve | zero balance')
+            logger.warning(f"{self.account.address} | approve | zero balance")
             return False
 
-        if not amount or amount.Wei > balance.Wei:
+        if amount.Wei > balance.Wei:
             amount = balance
 
-        approved = self.get_allowance(token_address=token_address, spender=spender)
+        approved = self.get_allowance(contract_address=contract_address, spender=spender_address)
         if amount.Wei <= approved.Wei:
-            logger.info(f'{self.account.address} | approve | already approved')
+            logger.info(f"{self.account.address} | approve | already approved")
             return True
 
-        tx_hash = self.approve(token_address=token_address, spender=spender, amount=amount)
-        if not self.verif_tx(tx_hash=tx_hash):
-            logger.info(f'{self.account.address} | approve | {token_address} for spender {spender}')
+        try:
+            contract = self.w3.eth.contract(address=Web3.to_checksum_address(contract_address), abi=self.abi)
+
+            transaction_params = {
+                "chainId": self.w3.eth.chain_id,
+                "gas": 200000,
+                "gasPrice": self.w3.eth.gas_price,
+                "nonce": self.w3.eth.get_transaction_count(self.account.address),
+                "from": self.account.address
+            }
+            approve = contract.functions.approve(spender_address, amount.Wei).build_transaction(transaction_params)
+        except Exception:
+            logger.info(f'{self.account.address} | Transaction failed | {traceback.format_exc()}')
             return False
 
-        return True
+        sign_approve = self.account.signTransaction(approve)
+        return {"hash": self.w3.eth.send_raw_transaction(sign_approve.rawTransaction), "amount": amount}
 
-    def get_eth_price(self, token='ETH'):
-        token = token.upper()
-        logger.info(f'{self.account.address} | getting {token} price')
-        response = requests.get(f'https://api.binance.com/api/v3/depth?limit=1&symbol={token}USDT')
-        if response.status_code != 200:
-            logger.warning(f'code: {response.status_code} | json: {response.json()}')
-            return None
-        result_dict = response.json()
-        if 'asks' not in result_dict:
-            logger.warning(f'code: {response.status_code} | json: {response.json()}')
-            return None
+    def deposit(self, contract_address: str, amount: TokenAmount):
+        contract = self.w3.eth.contract(address=Web3.to_checksum_address(contract_address), abi=self.abi)
 
-        return float(result_dict['asks'][0][0])
+        transaction_params = {
+            "chainId": self.w3.eth.chain_id,
+            "gas": 200000,
+            "gasPrice": self.w3.eth.gas_price,
+            "nonce": self.w3.eth.get_transaction_count(self.account.address),
+            "from": self.account.address,
+        }
+        deposit_tx = contract.functions.deposit(amount.Wei).build_transaction(transaction_params)
+
+        sign_deposit = self.account.signTransaction(deposit_tx)
+        return self.w3.eth.send_raw_transaction(sign_deposit.rawTransaction)
