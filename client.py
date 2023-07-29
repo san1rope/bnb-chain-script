@@ -1,6 +1,6 @@
 import logging
 
-from eth_account import Account
+from eth_account.signers.local import LocalAccount
 from web3 import Web3
 from typing import Optional
 import requests
@@ -25,11 +25,7 @@ class Client:
 
         self.w3 = Web3(Web3.HTTPProvider(endpoint_uri=self.network.rpc))
         self.w3.eth.account.enable_unaudited_hdwallet_features()
-
-        self.private_key = self.w3.eth.account.from_mnemonic(seed)._private_key
-        print(self.private_key)
-
-        self.address = Web3.to_checksum_address(self.w3.eth.account.from_mnemonic(seed).address)
+        self.account: LocalAccount = self.w3.eth.account.from_mnemonic(seed)
 
     def get_decimals(self, contract_address: str) -> int:
         return int(self.w3.eth.contract(
@@ -39,7 +35,7 @@ class Client:
 
     def balance_of(self, contract_address: str, address: Optional[str] = None) -> TokenAmount:
         if not address:
-            address = self.address
+            address = self.account.address
 
         contract = self.w3.eth.contract(address=Web3.to_checksum_address(contract_address), abi=Client.default_abi)
         return TokenAmount(
@@ -51,7 +47,7 @@ class Client:
     def get_allowance(self, token_address: str, spender: str) -> TokenAmount:
         contract = self.w3.eth.contract(address=Web3.to_checksum_address(token_address), abi=Client.default_abi)
         return TokenAmount(
-            amount=contract.functions.allowance(self.address, spender).call(),
+            amount=contract.functions.allowance(self.account.address, spender).call(),
             decimals=self.get_decimals(contract_address=token_address),
             wei=True
         )
@@ -61,7 +57,7 @@ class Client:
         balance = self.balance_of(contract_address=token_address)
         decimal = self.get_decimals(contract_address=token_address)
         if balance < min_value * 10 ** decimal:
-            logger.warning(f'{self.address} | balanceOf | not enough {token_address}')
+            logger.warning(f'{self.account.address} | balanceOf | not enough {token_address}')
             return False
 
         return True
@@ -97,11 +93,11 @@ class Client:
             max_fee_per_gas: Optional[int] = None
     ):
         if not from_:
-            from_ = self.address
+            from_ = self.account.address
 
         tx_params = {
             'chainId': self.w3.eth.chain_id,
-            'nonce': self.w3.eth.get_transaction_count(self.address),
+            'nonce': self.w3.eth.get_transaction_count(self.account.address),
             'from': Web3.to_checksum_address(from_),
             'to': Web3.to_checksum_address(to),
         }
@@ -132,23 +128,24 @@ class Client:
         try:
             tx_params['gas'] = int(self.w3.eth.estimate_gas(tx_params) * increase_gas)
         except Exception as err:
-            logger.warning(f'{self.address} | Transaction failed | {err}')
+            logger.warning(f'{self.account.address} | Transaction failed | {err}')
             return None
 
-        sign = self.w3.eth.account.sign_transaction(tx_params, self.private_key)
+        # sign = self.w3.eth.account.sign_transaction(tx_params, self.private_key)
+        sign = self.account.signTransaction(tx_params)
         return self.w3.eth.send_raw_transaction(sign.rawTransaction)
 
     def verif_tx(self, tx_hash) -> bool:
         try:
             data = self.w3.eth.wait_for_transaction_receipt(tx_hash, timeout=200)
             if 'status' in data and data['status'] == 1:
-                logger.info(f'{self.address} | transaction was successful: {tx_hash.hex()}')
+                logger.info(f'{self.account.address} | transaction was successful: {tx_hash.hex()}')
                 return True
             else:
-                logger.warning(f'{self.address} | transaction failed {data["transactionHash"].hex()}')
+                logger.warning(f'{self.account.address} | transaction failed {data["transactionHash"].hex()}')
                 return False
         except Exception as err:
-            logger.error(f'{self.address} | unexpected error in <verif_tx> function: {err}')
+            logger.error(f'{self.account.address} | unexpected error in <verif_tx> function: {err}')
             return False
 
     def approve(self, token_address, spender, amount: Optional[TokenAmount] = None):
@@ -166,11 +163,11 @@ class Client:
         )
 
     def approve_interface(self, token_address: str, spender: str, amount: Optional[TokenAmount] = None) -> bool:
-        logger.info(f'{self.address} | approve | start approve {token_address} for spender {spender}')
+        logger.info(f'{self.account.address} | approve | start approve {token_address} for spender {spender}')
         balance = self.balance_of(contract_address=token_address)
 
         if balance.Wei <= 0:
-            logger.warning(f'{self.address} | approve | zero balance')
+            logger.warning(f'{self.account.address} | approve | zero balance')
             return False
 
         if not amount or amount.Wei > balance.Wei:
@@ -178,19 +175,19 @@ class Client:
 
         approved = self.get_allowance(token_address=token_address, spender=spender)
         if amount.Wei <= approved.Wei:
-            logger.info(f'{self.address} | approve | already approved')
+            logger.info(f'{self.account.address} | approve | already approved')
             return True
 
         tx_hash = self.approve(token_address=token_address, spender=spender, amount=amount)
         if not self.verif_tx(tx_hash=tx_hash):
-            logger.info(f'{self.address} | approve | {token_address} for spender {spender}')
+            logger.info(f'{self.account.address} | approve | {token_address} for spender {spender}')
             return False
 
         return True
 
     def get_eth_price(self, token='ETH'):
         token = token.upper()
-        logger.info(f'{self.address} | getting {token} price')
+        logger.info(f'{self.account.address} | getting {token} price')
         response = requests.get(f'https://api.binance.com/api/v3/depth?limit=1&symbol={token}USDT')
         if response.status_code != 200:
             logger.warning(f'code: {response.status_code} | json: {response.json()}')
