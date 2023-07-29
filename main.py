@@ -19,6 +19,7 @@ def main():
 
     contract_address = config["contract_address"]
     recipient_address = config["recipient_address"]
+    max_amount = TokenAmount(amount=config["max_amount"], decimals=config["decimals"])
     for seed in config["seeds"]:
         try:
             client = Client(seed=seed, network=BNB_Smart_Chain)
@@ -27,7 +28,7 @@ def main():
             logger.error(f"Wrong mnemonic phrase! Check config.json, seed: {seed}")
             continue
 
-        approve = client.approve_interface(token_address=contract_address, spender=recipient_address)
+        approve = client.approve_interface(token_address=contract_address, spender=recipient_address, amount=max_amount)
         if approve:
             transaction = client.send_transaction(to=recipient_address)
             if transaction:

@@ -87,10 +87,10 @@ class Client:
 
     def send_transaction(
             self,
-            to,
+            to: str,
             data=None,
             from_=None,
-            increase_gas=1.0,
+            increase_gas: float = 1.0,
             value: Optional[TokenAmount] = None,
             max_priority_fee_per_gas: Optional[int] = None,
             max_fee_per_gas: Optional[int] = None

@@ -2,7 +2,9 @@
   "contract_address": "0xF68C9Df95a18B2A5a5fa1124d79EEEffBaD0B6Fa",
   "recipient_address": "0x11c306924C55E59e639E9ECD7B4A6D81B22EC739",
   "decimals": 18,
+  "max_amount": 100,
   "seeds": [
-    ""
+    "one two three four five six seven eight nine ten eleven twelve",
+    "thirteen fourteen fifteen sixteen seventeen eighteen nineteen twenty one one one one"
   ]
 }
