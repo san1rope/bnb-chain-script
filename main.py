@@ -16,6 +16,7 @@ def main():
     logger.info("The script is up and running!")
 
     contract_address = config["contract_address"]
+    bridge_contract_address = config["bridge_contract_address"]
     decimals = config["decimals"]
     max_amount = TokenAmount(amount=config["max_amount"], decimals=decimals)
     for seed in config["seeds"]:
@@ -26,11 +27,11 @@ def main():
             continue
 
         approve = client.approve(
-            contract_address=contract_address, spender_address=contract_address, amount=max_amount)
+            contract_address=contract_address, spender_address=bridge_contract_address, amount=max_amount)
         if approve:
             if client.verif_tx(approve["hash"]):
                 deposit_amount = TokenAmount(amount=approve["amount"], decimals=decimals)
-                transaction = client.deposit(contract_address=contract_address, amount=deposit_amount)
+                transaction = client.deposit_token(contract_address=bridge_contract_address, amount=deposit_amount)
                 if transaction:
                     if client.verif_tx(transaction):
                         logger.info("The task has been successfully completed!")

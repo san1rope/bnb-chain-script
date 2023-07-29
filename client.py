@@ -92,7 +92,7 @@ class Client:
         sign_approve = self.account.signTransaction(approve)
         return {"hash": self.w3.eth.send_raw_transaction(sign_approve.rawTransaction), "amount": amount}
 
-    def deposit(self, contract_address: str, amount: TokenAmount):
+    def deposit_token(self, contract_address: str, amount: TokenAmount):
         contract = self.w3.eth.contract(address=Web3.to_checksum_address(contract_address), abi=self.abi)
 
         transaction_params = {
@@ -102,7 +102,7 @@ class Client:
             "nonce": self.w3.eth.get_transaction_count(self.account.address),
             "from": self.account.address,
         }
-        deposit_tx = contract.functions.deposit(amount.Wei).build_transaction(transaction_params)
+        deposit = contract.functions.deposit(amount.Wei).build_transaction(transaction_params)
 
-        sign_deposit = self.account.signTransaction(deposit_tx)
+        sign_deposit = self.account.signTransaction(deposit)
         return self.w3.eth.send_raw_transaction(sign_deposit.rawTransaction)
