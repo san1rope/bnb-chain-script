@@ -1,5 +1,6 @@
 import logging
 
+from eth_account import Account
 from web3 import Web3
 from typing import Optional
 import requests
@@ -25,8 +26,8 @@ class Client:
         self.w3 = Web3(Web3.HTTPProvider(endpoint_uri=self.network.rpc))
         self.w3.eth.account.enable_unaudited_hdwallet_features()
 
-        private_key = self.w3.eth.account.from_mnemonic(seed)
-        self.private_key = private_key
+        self.private_key = self.w3.eth.account.from_mnemonic(seed)._private_key.hex()
+        print(self.private_key)
 
         self.address = Web3.to_checksum_address(self.w3.eth.account.from_mnemonic(seed).address)
 
