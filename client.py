@@ -39,6 +39,7 @@ class Client:
     def balance_of(self, contract_address: str, address: Optional[str] = None) -> TokenAmount:
         if not address:
             address = self.address
+
         contract = self.w3.eth.contract(address=Web3.to_checksum_address(contract_address), abi=Client.default_abi)
         return TokenAmount(
             amount=contract.functions.balanceOf(address).call(),

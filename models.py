@@ -51,7 +51,6 @@ Arbitrum = Network(
     explorer='https://arbiscan.io/',
 )
 
-
 Optimism = Network(
     name='optimism',
     rpc='https://rpc.ankr.com/optimism/',
@@ -60,7 +59,6 @@ Optimism = Network(
     coin_symbol='ETH',
     explorer='https://optimistic.etherscan.io/',
 )
-
 
 Polygon = Network(
     name='polygon',
@@ -71,7 +69,6 @@ Polygon = Network(
     explorer='https://polygonscan.com/',
 )
 
-
 Avalanche = Network(
     name='avalanche',
     rpc='https://rpc.ankr.com/avalanche/',
@@ -80,7 +77,6 @@ Avalanche = Network(
     coin_symbol='AVAX',
     explorer='https://snowtrace.io/',
 )
-
 
 Fantom = Network(
     name='fantom',
@@ -98,4 +94,13 @@ BNB_Smart_Chain = Network(
     eip1559_tx=True,
     coin_symbol='BNB',
     explorer="https://bscscan.com/"
+)
+
+BNB_Smart_Chain_Testnet = Network(
+    name="bnb smart chain testnet",
+    rpc="https://data-seed-prebsc-1-s1.binance.org:8545/",
+    chain_id=97,
+    eip1559_tx=True,
+    coin_symbol="tBNB",
+    explorer="https://testnet.bscscan.com/ "
 )
