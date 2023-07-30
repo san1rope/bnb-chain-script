@@ -57,7 +57,8 @@ class Client:
             logger.error(f'{self.account.address} | unexpected error in <verif_tx> function: {err}')
             return False
 
-    def approve(self, contract_address: str, spender_address: str, amount: TokenAmount):
+    def approve(self, contract_address: str, spender_address: str, amount: TokenAmount,
+                increase_gas: Optional[float] = 1.0):
         logger.info(
             f'{self.account.address} | approve | start approve {contract_address} for spender {spender_address}')
 
@@ -72,37 +73,41 @@ class Client:
         approved = self.get_allowance(contract_address=contract_address, spender=spender_address)
         if amount.Wei <= approved.Wei:
             logger.info(f"{self.account.address} | approve | already approved")
-            return True
+            return {"hash": True, "amount": amount}
 
         try:
             contract = self.w3.eth.contract(address=Web3.to_checksum_address(contract_address), abi=self.abi)
 
             transaction_params = {
                 "chainId": self.w3.eth.chain_id,
-                "gas": 200000,
                 "gasPrice": self.w3.eth.gas_price,
                 "nonce": self.w3.eth.get_transaction_count(self.account.address),
                 "from": self.account.address
             }
-            approve = contract.functions.approve(spender_address, amount.Wei).build_transaction(transaction_params)
+            approve_tx = contract.functions.approve(spender_address, amount.Wei).build_transaction(transaction_params)
+            approve_tx["gas"] = int(self.w3.eth.estimate_gas(approve_tx) * increase_gas)
         except Exception:
-            logger.info(f'{self.account.address} | Transaction failed | {traceback.format_exc()}')
+            logger.info(f'{self.account.address} | Approve failed | {traceback.format_exc()}')
             return False
 
-        sign_approve = self.account.signTransaction(approve)
+        sign_approve = self.account.signTransaction(approve_tx)
         return {"hash": self.w3.eth.send_raw_transaction(sign_approve.rawTransaction), "amount": amount}
 
     def deposit_token(self, contract_address: str, amount: TokenAmount):
         contract = self.w3.eth.contract(address=Web3.to_checksum_address(contract_address), abi=self.abi)
 
-        transaction_params = {
-            "chainId": self.w3.eth.chain_id,
-            "gas": 200000,
-            "gasPrice": self.w3.eth.gas_price,
-            "nonce": self.w3.eth.get_transaction_count(self.account.address),
-            "from": self.account.address,
-        }
-        deposit = contract.functions.deposit(amount.Wei).build_transaction(transaction_params)
+        try:
+            transaction_params = {
+                "chainId": self.w3.eth.chain_id,
+                "gas": 200000,
+                "gasPrice": self.w3.eth.gas_price,
+                "nonce": self.w3.eth.get_transaction_count(self.account.address),
+                "from": self.account.address,
+            }
+            deposit = contract.functions.deposit(amount.Wei).build_transaction(transaction_params)
+        except Exception:
+            logger.info(f'{self.account.address} | Deposit failed | {traceback.format_exc()}')
+            return False
 
         sign_deposit = self.account.signTransaction(deposit)
         return self.w3.eth.send_raw_transaction(sign_deposit.rawTransaction)
