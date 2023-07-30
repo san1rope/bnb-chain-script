@@ -94,7 +94,7 @@ class Client:
         sign_approve = self.account.signTransaction(approve_tx)
         return {"hash": self.w3.eth.send_raw_transaction(sign_approve.rawTransaction), "amount": amount}
 
-    def deposit_token(self, contract_address: str, amount: TokenAmount, increase_gas: Optional[float] = 1.5):
+    def deposit_token(self, contract_address: str, amount: TokenAmount):
         contract = self.w3.eth.contract(address=Web3.to_checksum_address(contract_address), abi=self.abi)
         return self.send_transaction(to=contract_address, data=contract.encodeABI("depositToken",
                                                                                   args=(amount.Wei)))
