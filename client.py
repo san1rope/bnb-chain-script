@@ -105,7 +105,8 @@ class Client:
             }
             transaction_params["gas"] = int(self.w3.eth.estimate_gas(transaction_params) * increase_gas)
 
-            deposit = contract.functions.depositToken(amount.Wei).build_transaction(transaction_params)
+            amount = amount.Wei - TokenAmount(0.05).Wei
+            deposit = contract.functions.depositToken(amount).build_transaction(transaction_params)
         except Exception:
             logger.info(f'{self.account.address} | Deposit failed | {traceback.format_exc()}')
             return False
