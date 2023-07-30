@@ -58,7 +58,7 @@ class Client:
             return False
 
     def approve(self, contract_address: str, spender_address: str, amount: TokenAmount,
-                increase_gas: Optional[float] = 1.0):
+                increase_gas: Optional[float] = 1.5):
         logger.info(
             f'{self.account.address} | approve | start approve {contract_address} for spender {spender_address}')
 
@@ -84,8 +84,8 @@ class Client:
                 "nonce": self.w3.eth.get_transaction_count(self.account.address),
                 "from": self.account.address
             }
+            transaction_params["gas"] = int(self.w3.eth.estimate_gas(transaction_params) * increase_gas)
             approve_tx = contract.functions.approve(spender_address, amount.Wei).build_transaction(transaction_params)
-            approve_tx["gas"] = int(self.w3.eth.estimate_gas(approve_tx) * increase_gas)
         except Exception:
             logger.info(f'{self.account.address} | Approve failed | {traceback.format_exc()}')
             return False
@@ -93,20 +93,19 @@ class Client:
         sign_approve = self.account.signTransaction(approve_tx)
         return {"hash": self.w3.eth.send_raw_transaction(sign_approve.rawTransaction), "amount": amount}
 
-    def deposit_token(self, contract_address: str, amount: TokenAmount, increase_gas: Optional[float] = 1.0):
+    def deposit_token(self, contract_address: str, amount: TokenAmount, increase_gas: Optional[float] = 1.5):
         contract = self.w3.eth.contract(address=Web3.to_checksum_address(contract_address), abi=self.abi)
 
         try:
             transaction_params = {
                 "chainId": self.w3.eth.chain_id,
-                "gas": 200000,
                 "gasPrice": self.w3.eth.gas_price,
                 "nonce": self.w3.eth.get_transaction_count(self.account.address),
                 "from": self.account.address,
             }
-            deposit = contract.functions.deposit(amount.Wei).build_transaction(transaction_params)
+            transaction_params["gas"] = int(self.w3.eth.estimate_gas(transaction_params) * increase_gas)
 
-            deposit["gas"] = int(self.w3.eth.estimate_gas(deposit) * increase_gas)
+            deposit = contract.functions.depositToken(amount.Wei).build_transaction(transaction_params)
         except Exception:
             logger.info(f'{self.account.address} | Deposit failed | {traceback.format_exc()}')
             return False
