@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 class Client:
     def __init__(self, seed: str, network: Network, abi: dict):
         self.w3 = Web3(Web3.HTTPProvider(endpoint_uri=network.rpc))
-        self.w3.middleware_onion.inject(geth_poa_middleware, layer=0)
+        # self.w3.middleware_onion.inject(geth_poa_middleware, layer=0)
         self.w3.eth.account.enable_unaudited_hdwallet_features()
 
         self.account: LocalAccount = self.w3.eth.account.from_mnemonic(seed)
