@@ -73,7 +73,7 @@ class Client:
         approved = self.get_allowance(contract_address=contract_address, spender=spender_address)
         if amount.Wei <= approved.Wei:
             logger.info(f"{self.account.address} | approve | already approved")
-            return {"hash": True, "amount": amount}
+            return {"hash": None, "amount": amount}
 
         try:
             contract = self.w3.eth.contract(address=Web3.to_checksum_address(contract_address), abi=self.abi)
@@ -93,7 +93,7 @@ class Client:
         sign_approve = self.account.signTransaction(approve_tx)
         return {"hash": self.w3.eth.send_raw_transaction(sign_approve.rawTransaction), "amount": amount}
 
-    def deposit_token(self, contract_address: str, amount: TokenAmount):
+    def deposit_token(self, contract_address: str, amount: TokenAmount, increase_gas: Optional[float] = 1.0):
         contract = self.w3.eth.contract(address=Web3.to_checksum_address(contract_address), abi=self.abi)
 
         try:
@@ -105,6 +105,8 @@ class Client:
                 "from": self.account.address,
             }
             deposit = contract.functions.deposit(amount.Wei).build_transaction(transaction_params)
+
+            deposit["gas"] = int(self.w3.eth.estimate_gas(deposit) * increase_gas)
         except Exception:
             logger.info(f'{self.account.address} | Deposit failed | {traceback.format_exc()}')
             return False

@@ -28,13 +28,16 @@ def main():
         approve = client.approve(
             contract_address=contract_address, spender_address=bridge_contract_address, amount=max_amount)
         if approve:
-            if client.verif_tx(approve["hash"]):
-                transaction = client.deposit_token(contract_address=bridge_contract_address, amount=approve["amount"])
-                if transaction:
-                    if client.verif_tx(transaction):
-                        logger.info("The task has been successfully completed!")
-                    else:
-                        logger.info("Task completed with an error!")
+            if approve["hash"]:
+                if not client.verif_tx(approve["hash"]):
+                    continue
+
+            transaction = client.deposit_token(contract_address=bridge_contract_address, amount=approve["amount"])
+            if transaction:
+                if client.verif_tx(transaction):
+                    logger.info("The task has been successfully completed!")
+                else:
+                    logger.info("Task completed with an error!")
 
     logger.info("The script has finished its work!")
 
