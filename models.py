@@ -91,7 +91,7 @@ BNB_Smart_Chain = Network(
     name="bnb smart chain",
     rpc="https://bsc-dataseed.binance.org/",
     chain_id=56,
-    eip1559_tx=False,
+    eip1559_tx=True,
     coin_symbol='BNB',
     explorer="https://bscscan.com/"
 )
