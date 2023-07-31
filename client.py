@@ -90,7 +90,7 @@ class Client:
             logger.info(f'{self.account.address} | Approve failed | {traceback.format_exc()}')
             return False
 
-        sign_approve = self.account.signTransaction(approve_tx)
+        sign_approve = self.account.sign_transaction(approve_tx)
         return {"hash": self.w3.eth.send_raw_transaction(sign_approve.rawTransaction), "amount": amount}
 
     def deposit_token(self, contract_address: str, amount: TokenAmount):
@@ -98,15 +98,15 @@ class Client:
         try:
             transaction_params = {
                 "chainId": self.w3.eth.chain_id,
-                "gas": self.w3.to_wei(6, "gwei"),
+                "gas": 120000,
                 "gasPrice": self.w3.to_wei(5, "gwei"),
                 "nonce": self.w3.eth.get_transaction_count(self.account.address),
-                "from": self.account.address,
+                "from": self.account.address
             }
             deposit = contract.functions.depositToken(amount.Wei).build_transaction(transaction_params)
         except Exception:
             logger.info(f'{self.account.address} | Deposit failed | {traceback.format_exc()}')
             return False
 
-        sign_deposit = self.account.signTransaction(deposit)
+        sign_deposit = self.account.sign_transaction(deposit)
         return self.w3.eth.send_raw_transaction(sign_deposit.rawTransaction)
