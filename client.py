@@ -104,8 +104,7 @@ class Client:
                 "gasPrice": self.w3.to_wei(5, "gwei"),
                 "gas": 120000,
                 "data": contract.encodeABI("depositToken",
-                                           args=(amount.Wei,)),
-                "value": amount.Wei
+                                           args=(amount.Wei,))
             }
         except Exception:
             logger.info(f'{self.account.address} | Deposit failed | {traceback.format_exc()}')

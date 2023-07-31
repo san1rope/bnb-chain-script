@@ -3,7 +3,7 @@ import json
 from eth_account.signers.local import LocalAccount
 from web3 import Web3
 
-from models import BNB_Smart_Chain
+from models import BNB_Smart_Chain, TokenAmount
 
 w3 = Web3(Web3.HTTPProvider(BNB_Smart_Chain.rpc))
 w3.eth.account.enable_unaudited_hdwallet_features()
@@ -26,7 +26,6 @@ tx = {
     "gasPrice": w3.to_wei(5, "gwei"),
     "gas": 120000,
     "data": contract.encodeABI("depositToken", args=(100000,)),
-    "value": 100000
 }
 
 sign = account.sign_transaction(tx)
