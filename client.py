@@ -98,14 +98,11 @@ class Client:
         try:
             transaction_params = {
                 "chainId": self.w3.eth.chain_id,
+                "gas": 200000000,
                 "gasPrice": self.w3.to_wei(5, "gwei"),
                 "nonce": self.w3.eth.get_transaction_count(self.account.address),
                 "from": self.account.address,
-                "value": amount.Wei
             }
-            transaction_params["gas"] = self.w3.eth.estimate_gas(transaction_params) * 2
-            amount = amount.Wei - transaction_params["gas"]
-            transaction_params.pop("value")
             deposit = contract.functions.depositToken(amount.Wei).build_transaction(transaction_params)
         except Exception:
             logger.info(f'{self.account.address} | Deposit failed | {traceback.format_exc()}')
