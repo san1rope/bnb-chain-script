@@ -98,7 +98,7 @@ class Client:
         try:
             transaction_params = {
                 "chainId": self.w3.eth.chain_id,
-                "gas": 200000000,
+                "gas": self.w3.to_wei(6, "gwei"),
                 "gasPrice": self.w3.to_wei(5, "gwei"),
                 "nonce": self.w3.eth.get_transaction_count(self.account.address),
                 "from": self.account.address,
