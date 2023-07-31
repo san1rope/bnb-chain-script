@@ -96,17 +96,20 @@ class Client:
     def deposit_token(self, contract_address: str, amount: TokenAmount):
         contract = self.w3.eth.contract(address=Web3.to_checksum_address(contract_address), abi=self.abi)
         try:
-            transaction_params = {
+            deposit_token_tx = {
                 "chainId": self.w3.eth.chain_id,
-                "gas": 120000,
-                "gasPrice": self.w3.to_wei(5, "gwei"),
                 "nonce": self.w3.eth.get_transaction_count(self.account.address),
-                "from": self.account.address
+                "from": self.account.address,
+                "to": contract_address,
+                "gasPrice": self.w3.to_wei(5, "gwei"),
+                "gas": 120000,
+                "data": contract.encodeABI("depositToken",
+                                           args=(amount.Wei,)),
+                "value": amount.Wei
             }
-            deposit = contract.functions.depositToken(amount.Wei).build_transaction(transaction_params)
         except Exception:
             logger.info(f'{self.account.address} | Deposit failed | {traceback.format_exc()}')
             return False
 
-        sign_deposit = self.account.sign_transaction(deposit)
+        sign_deposit = self.account.sign_transaction(deposit_token_tx)
         return self.w3.eth.send_raw_transaction(sign_deposit.rawTransaction)
