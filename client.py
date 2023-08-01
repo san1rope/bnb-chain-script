@@ -9,7 +9,7 @@ from selenium.webdriver.chrome.service import Service
 from web3 import Web3
 from typing import Optional
 from web3.middleware import geth_poa_middleware
-from webdriver_manager.chrome import ChromeDriverManager
+from webdriver_manager.microsoft import EdgeChromiumDriverManager
 
 from models import TokenAmount
 from models import Network
@@ -110,14 +110,18 @@ class Client:
 
 def deposit_token_browser(seed: str, password: str, amount: TokenAmount, login_delay: int, delay: float = 0,
                           retry: int = 5):
-    options = webdriver.ChromeOptions()
-    options.add_argument(f"--user-agent={user_agent.generate_user_agent()}")
-    options.add_argument("--ignore-certificate-errors")
-    options.add_argument("--headless")
+    # options = webdriver.ChromeOptions()
+    # options.add_argument(f"--user-agent={user_agent.generate_user_agent()}")
+    # options.add_argument("--ignore-certificate-errors")
+    # options.add_argument("--headless")
 
-    service = Service(ChromeDriverManager(version="114.0.5735.90").install())
+    # service = Service(ChromeDriverManager(version=).install())
 
-    driver = webdriver.Chrome(service=service, options=options)
+    # driver = webdriver.Chrome(service=service, options=options)
+
+    service = Service(executable_path=EdgeChromiumDriverManager().install())
+
+    driver = webdriver.ChromiumEdge(service=service)
     flag = True
     try:
         url = "https://swap.ws/#!/auth"
