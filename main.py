@@ -32,12 +32,7 @@ def main():
                 if not client.verif_tx(approve["hash"]):
                     continue
 
-            transaction = client.deposit_token(contract_address=bridge_contract_address, amount=approve["amount"])
-            if transaction:
-                if client.verif_tx(transaction):
-                    logger.info("The task has been successfully completed!")
-                else:
-                    logger.info("Task completed with an error!")
+            logger.info("Approve has been completed!")
 
     logger.info("The script has finished its work!")
 

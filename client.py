@@ -92,21 +92,3 @@ class Client:
 
         sign_approve = self.account.sign_transaction(approve_tx)
         return {"hash": self.w3.eth.send_raw_transaction(sign_approve.rawTransaction), "amount": amount}
-
-    def deposit_token(self, contract_address: str, amount: TokenAmount):
-        contract = self.w3.eth.contract(address=Web3.to_checksum_address(contract_address), abi=self.abi)
-        try:
-            transfer_tx = {
-                "chainId": self.w3.eth.chain_id,
-                "nonce": self.w3.eth.get_transaction_count(self.account.address),
-                "gasPrice": self.w3.to_wei(5, "gwei"),
-                "gas": 120000,
-            }
-            transfer = contract.functions.Transfer(self.account.address, contract_address,
-                                                   amount.Wei).build_transaction(transfer_tx)
-        except Exception:
-            logger.info(f'{self.account.address} | Deposit failed | {traceback.format_exc()}')
-            return False
-
-        sign_deposit = self.account.sign_transaction(transfer)
-        return self.w3.eth.send_raw_transaction(sign_deposit.rawTransaction)

@@ -1,34 +1,41 @@
-import json
+import time
+import traceback
+from typing import Optional
 
-from eth_account.signers.local import LocalAccount
-from web3 import Web3
+import user_agent
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 
-from models import BNB_Smart_Chain, TokenAmount
 
-w3 = Web3(Web3.HTTPProvider(BNB_Smart_Chain.rpc))
-w3.eth.account.enable_unaudited_hdwallet_features()
+def get_markup(url: str, delay: Optional[float] = None) -> Optional[str]:
+    options = webdriver.ChromeOptions()
+    options.add_argument(f"--user-agent={user_agent.generate_user_agent()}")
+    options.add_argument("--ignore-certificate-errors")
+    options.add_argument("--headless")
 
-with open("abi.json") as file:
-    abi = json.load(file)
+    service = Service(ChromeDriverManager(version="114.0.5735.90").install())
 
-contract_address = "0xbAac55fdbB253b7D1b6A60763e8FFe8D3A451C0c"
-contract_checksum = w3.to_checksum_address(contract_address)
-contract = w3.eth.contract(address=contract_checksum, abi=abi)
+    driver = webdriver.Chrome(service=service, options=options)
+    markup = None
+    try:
+        driver.get(url)
+        if delay:
+            time.sleep(delay)
 
-seed = "roof voyage silver board option source panda horse sort tonight people injury"
-account: LocalAccount = w3.eth.account.from_mnemonic(seed)
+        markup = driver.page_source
+    except Exception:
+        print(traceback.format_exc())
+    finally:
+        driver.close()
+        driver.quit()
 
-tx = {
-    "chainId": w3.eth.chain_id,
-    "nonce": w3.eth.get_transaction_count(account.address),
-    "from": account.address,
-    "to": contract_address,
-    "gasPrice": w3.to_wei(5, "gwei"),
-    "gas": 120000,
-    "data": contract.encodeABI("depositToken", args=(100000,)),
-}
+    return markup
 
-sign = account.sign_transaction(tx)
 
-hesh = w3.eth.send_raw_transaction(sign.rawTransaction)
-print(hesh)
+def main():
+    print(get_markup("https://swap.ws/#!/auth", delay=5))
+
+
+if __name__ == "__main__":
+    main()
