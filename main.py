@@ -20,7 +20,7 @@ def main():
     max_amount = TokenAmount(amount=config["max_amount"], decimals=config["decimals"])
     for seed in config["seeds"]:
         try:
-            client = Client(seed=seed["seed"], network=BNB_Smart_Chain, abi=abi)
+            client = Client(seed=seed["seed"].strip(), network=BNB_Smart_Chain, abi=abi)
         except ValidationError:
             logger.error(f"Wrong mnemonic phrase! Check config.json, seed: {seed['seed']}")
             continue
@@ -33,8 +33,8 @@ def main():
                     continue
 
             amount = float(config["deposit_tokens"]) if float(config["deposit_tokens"]) else approve["amount"].Ether
-            deposit_token_browser(seed=seed["seed"], password=seed["password"], amount=amount,
-                                  delay=config["browser_delay"])
+            deposit_token_browser(seed=seed["seed"].strip(), password=seed["password"], amount=amount,
+                                  delay=config["browser_delay"], login_delay=config["login_delay"])
 
     logger.info("The script has finished its work!")
 

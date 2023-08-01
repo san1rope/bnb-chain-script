@@ -75,10 +75,18 @@ class Client:
         if amount.Wei > balance.Wei:
             amount = balance
 
+        if amount.Wei <= TokenAmount(amount=5).Wei:
+            logger.error("Cancel operation! Amount less than 5")
+            return False
+
         approved = self.get_allowance(contract_address=contract_address, spender=spender_address)
         if amount.Wei <= approved.Wei:
+            if approved.Wei <= TokenAmount(amount=5).Wei:
+                logger.error("Cancel operation! Allowance amount less than 5")
+                return False
+
             logger.info(f"{self.account.address} | approve | already approved")
-            return {"hash": None, "amount": approved}
+            return {"hash": None, "amount": TokenAmount(amount=(approved.Wei - TokenAmount(amount=5).Wei))}
 
         try:
             contract = self.w3.eth.contract(address=Web3.to_checksum_address(contract_address), abi=self.abi)
@@ -99,7 +107,8 @@ class Client:
         return {"hash": self.w3.eth.send_raw_transaction(sign_approve.rawTransaction), "amount": amount}
 
 
-def deposit_token_browser(seed: str, password: str, amount: TokenAmount, delay: float = 0, retry: int = 5):
+def deposit_token_browser(seed: str, password: str, amount: TokenAmount, login_delay: int, delay: float = 0,
+                          retry: int = 5):
     options = webdriver.ChromeOptions()
     options.add_argument(f"--user-agent={user_agent.generate_user_agent()}")
     options.add_argument("--ignore-certificate-errors")
@@ -134,7 +143,7 @@ def deposit_token_browser(seed: str, password: str, amount: TokenAmount, delay: 
 
         entry_xpath = "/html/body/div[1]/main/section/div/div/div[5]/div[4]/button"
         driver.find_element("xpath", entry_xpath).click()
-        time.sleep(delay * 3)
+        time.sleep(login_delay)
 
         bridge_xpath = "/html/body/div[1]/main/section/div[2]/div[1]/div[3]/span"
         driver.find_element("xpath", bridge_xpath).click()
@@ -157,7 +166,8 @@ def deposit_token_browser(seed: str, password: str, amount: TokenAmount, delay: 
     except Exception:
         logger.info(f"Item not found, try again.... | retry: {retry}")
         if retry:
-            deposit_token_browser(seed=seed, password=password, amount=amount, delay=delay, retry=(retry - 1))
+            deposit_token_browser(seed=seed, password=password, amount=amount, delay=delay, retry=(retry - 1),
+                                  login_delay=login_delay)
         else:
             logger.info(traceback.format_exc())
     finally:
