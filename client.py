@@ -150,7 +150,7 @@ def deposit_token_browser(seed: str, password: str, amount: TokenAmount, login_d
         time.sleep(delay)
 
         amount_xpath = "/html/body/div[1]/main/section/div[2]/div[2]/div[5]/div/div/div[2]/div[4]/input"
-        driver.find_element("xpath", amount_xpath).send_keys(str(amount))
+        driver.find_element("xpath", amount_xpath).send_keys(str(amount.Wei))
         time.sleep(delay)
 
         allow_xpath = "/html/body/div[1]/main/section/div[2]/div[2]/div[5]/div/div/div[3]/button"
