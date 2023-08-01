@@ -9,6 +9,7 @@ from selenium.webdriver.chrome.service import Service
 from web3 import Web3
 from typing import Optional
 from web3.middleware import geth_poa_middleware
+from webdriver_manager.chrome import ChromeDriverManager
 from webdriver_manager.microsoft import EdgeChromiumDriverManager
 
 from models import TokenAmount
@@ -80,7 +81,7 @@ class Client:
             return False
 
         approved = self.get_allowance(contract_address=contract_address, spender=spender_address)
-        if amount.Wei <= approved.Wei:
+        if TokenAmount(amount=(amount.Wei - TokenAmount(5).Wei), wei=True).Wei <= approved.Wei:
             if approved.Wei <= TokenAmount(amount=5).Wei:
                 logger.error("Cancel operation! Allowance amount less than 5")
                 return False
@@ -110,18 +111,18 @@ class Client:
 
 def deposit_token_browser(seed: str, password: str, amount: TokenAmount, login_delay: int, delay: float = 0,
                           retry: int = 5):
-    # options = webdriver.ChromeOptions()
-    # options.add_argument(f"--user-agent={user_agent.generate_user_agent()}")
-    # options.add_argument("--ignore-certificate-errors")
+    options = webdriver.ChromeOptions()
+    options.add_argument(f"--user-agent={user_agent.generate_user_agent()}")
+    options.add_argument("--ignore-certificate-errors")
     # options.add_argument("--headless")
 
-    # service = Service(ChromeDriverManager(version=).install())
+    service = Service(ChromeDriverManager(version="114.0.5735.90").install())
 
-    # driver = webdriver.Chrome(service=service, options=options)
+    driver = webdriver.Chrome(service=service, options=options)
 
-    service = Service(executable_path=EdgeChromiumDriverManager().install())
-
-    driver = webdriver.ChromiumEdge(service=service)
+    # service = Service(executable_path=EdgeChromiumDriverManager().install())
+    #
+    # driver = webdriver.ChromiumEdge(service=service)
     flag = True
     try:
         url = "https://swap.ws/#!/auth"
@@ -174,10 +175,15 @@ def deposit_token_browser(seed: str, password: str, amount: TokenAmount, login_d
             deposit_token_browser(seed=seed, password=password, amount=amount, delay=delay, retry=(retry - 1),
                                   login_delay=login_delay)
         else:
+            flag = False
             logger.info(traceback.format_exc())
     finally:
         driver.close()
         driver.quit()
 
-    logger.info("The deposit has been successfully completed!")
+    if flag:
+        logger.info("The deposit has been successfully completed!")
+    else:
+        logging.error("The deposit was not successful!")
+
     return flag
