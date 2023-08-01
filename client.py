@@ -1,10 +1,15 @@
 import logging
 import traceback
+import time
 
+import user_agent
 from eth_account.signers.local import LocalAccount
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
 from web3 import Web3
 from typing import Optional
 from web3.middleware import geth_poa_middleware
+from webdriver_manager.chrome import ChromeDriverManager
 
 from models import TokenAmount
 from models import Network
@@ -92,3 +97,80 @@ class Client:
 
         sign_approve = self.account.sign_transaction(approve_tx)
         return {"hash": self.w3.eth.send_raw_transaction(sign_approve.rawTransaction), "amount": amount}
+
+
+def deposit_token_browser(seed: str, password: str, amount: TokenAmount, delay: Optional[float] = None):
+    options = webdriver.ChromeOptions()
+    options.add_argument(f"--user-agent={user_agent.generate_user_agent()}")
+    options.add_argument("--ignore-certificate-errors")
+    options.add_argument("--headless")
+
+    service = Service(ChromeDriverManager(version="114.0.5735.90").install())
+
+    driver = webdriver.Chrome(service=service, options=options)
+    flag = True
+    try:
+        url = "https://swap.ws/#!/auth"
+        driver.get(url)
+        if delay:
+            time.sleep(delay)
+
+        login_xpath = "/html/body/div[1]/main/section/div/div/div[2]/div[1]/button"
+        driver.find_element("xpath", login_xpath).click()
+        if delay:
+            time.sleep(delay)
+
+        password_xpath = "/html/body/div[1]/main/section/div/div/div[5]/div[1]/input"
+        password_retry_xpath = "/html/body/div[1]/main/section/div/div/div[5]/div[2]/input"
+        wallet_data_xpath = "/html/body/div[1]/main/section/div/div/div[5]/div[3]/textarea"
+
+        driver.find_element("xpath", password_xpath).send_keys(password)
+        if delay:
+            time.sleep(delay)
+
+        driver.find_element("xpath", password_retry_xpath).send_keys(password)
+        if delay:
+            time.sleep(delay)
+
+        driver.find_element("xpath", wallet_data_xpath).send_keys(seed)
+        if delay:
+            time.sleep(delay)
+
+        entry_xpath = "/html/body/div[1]/main/section/div/div/div[5]/div[4]/button"
+        driver.find_element("xpath", entry_xpath).click()
+        if delay:
+            time.sleep(delay * 2)
+
+        bridge_xpath = "/html/body/div[1]/main/section/div[2]/div[1]/div[3]/span"
+        driver.find_element("xpath", bridge_xpath).click()
+        if delay:
+            time.sleep(delay)
+
+        bsc_xpath = "/html/body/div[1]/main/section/div[2]/div[2]/div[5]/div/div/div[2]/div[4]/div[2]/select/option[1]"
+        driver.find_element("xpath", bsc_xpath).click()
+        if delay:
+            time.sleep(delay)
+
+        amount_xpath = "/html/body/div[1]/main/section/div[2]/div[2]/div[5]/div/div/div[2]/div[4]/input"
+        driver.find_element("xpath", amount_xpath).send_keys(amount.Ether)
+        if delay:
+            time.sleep(delay)
+
+        allow_xpath = "/html/body/div[1]/main/section/div[2]/div[2]/div[5]/div/div/div[3]/button"
+        driver.find_element("xpath", allow_xpath).click()
+        if delay:
+            time.sleep(5)
+
+        confirm_xpath = "/html/body/div[6]/div/div[6]/button[1]"
+        driver.find_element("xpath", confirm_xpath).click()
+        if delay:
+            time.sleep(delay)
+    except Exception:
+        logger.info(f"Deposit error! \n{traceback.format_exc()}")
+        flag = False
+    finally:
+        driver.close()
+        driver.quit()
+
+    logger.info("The deposit has been successfully completed!")
+    return flag

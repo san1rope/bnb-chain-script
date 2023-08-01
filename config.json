@@ -3,7 +3,12 @@
   "bridge_contract_address": "0xbAac55fdbB253b7D1b6A60763e8FFe8D3A451C0c",
   "decimals": 18,
   "max_amount": 100,
+  "deposit_tokens": 0,
+  "browser_delay": 3,
   "seeds": [
-    ""
+    {
+      "seed": "",
+      "password": ""
+    }
   ]
 }

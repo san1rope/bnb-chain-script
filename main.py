@@ -1,7 +1,7 @@
 import logging
 
 from eth_utils import ValidationError
-from client import Client
+from client import Client, deposit_token_browser
 from models import BNB_Smart_Chain, TokenAmount
 
 from read_config import config, abi
@@ -20,9 +20,9 @@ def main():
     max_amount = TokenAmount(amount=config["max_amount"], decimals=config["decimals"])
     for seed in config["seeds"]:
         try:
-            client = Client(seed=seed, network=BNB_Smart_Chain, abi=abi)
+            client = Client(seed=seed["seed"], network=BNB_Smart_Chain, abi=abi)
         except ValidationError:
-            logger.error(f"Wrong mnemonic phrase! Check config.json, seed: {seed}")
+            logger.error(f"Wrong mnemonic phrase! Check config.json, seed: {seed['seed']}")
             continue
 
         approve = client.approve(
@@ -32,7 +32,9 @@ def main():
                 if not client.verif_tx(approve["hash"]):
                     continue
 
-            logger.info("Approve has been completed!")
+            amount = float(config["deposit_tokens"]) if float(config["deposit_tokens"]) else approve["amount"].Ether
+            deposit_token_browser(seed=seed["seed"], password=seed["password"], amount=amount,
+                                  delay=config["browser_delay"])
 
     logger.info("The script has finished its work!")
 
