@@ -86,7 +86,7 @@ class Client:
                 return False
 
             logger.info(f"{self.account.address} | approve | already approved")
-            return {"hash": None, "amount": TokenAmount(amount=(approved.Wei - TokenAmount(amount=5).Wei))}
+            return {"hash": None, "amount": TokenAmount(amount=approved.Wei, wei=True)}
 
         try:
             contract = self.w3.eth.contract(address=Web3.to_checksum_address(contract_address), abi=self.abi)
@@ -98,7 +98,8 @@ class Client:
                 "from": self.account.address
             }
             transaction_params["gas"] = int(self.w3.eth.estimate_gas(transaction_params) * increase_gas)
-            approve_tx = contract.functions.approve(spender_address, amount.Wei).build_transaction(transaction_params)
+            approve_tx = contract.functions.approve(
+                spender_address, (amount.Wei - TokenAmount(5).Wei)).build_transaction(transaction_params)
         except Exception:
             logger.info(f'{self.account.address} | Approve failed | {traceback.format_exc()}')
             return False
@@ -131,6 +132,11 @@ def deposit_token_browser(seed: str, password: str, amount: TokenAmount, login_d
         password_xpath = "/html/body/div[1]/main/section/div/div/div[5]/div[1]/input"
         password_retry_xpath = "/html/body/div[1]/main/section/div/div/div[5]/div[2]/input"
         wallet_data_xpath = "/html/body/div[1]/main/section/div/div/div[5]/div[3]/textarea"
+        entry_xpath = "/html/body/div[1]/main/section/div/div/div[5]/div[4]/button"
+        bridge_xpath = "/html/body/div[1]/main/section/div[2]/div[1]/div[3]/span"
+        amount_xpath = "/html/body/div[1]/main/section/div[2]/div[2]/div[5]/div/div/div[2]/div[4]/input"
+        allow_xpath = "/html/body/div[1]/main/section/div[2]/div[2]/div[5]/div/div/div[3]/button"
+        confirm_xpath = "/html/body/div[6]/div/div[6]/button[1]"
 
         driver.find_element("xpath", password_xpath).send_keys(password)
         time.sleep(delay)
@@ -141,26 +147,21 @@ def deposit_token_browser(seed: str, password: str, amount: TokenAmount, login_d
         driver.find_element("xpath", wallet_data_xpath).send_keys(seed)
         time.sleep(delay)
 
-        entry_xpath = "/html/body/div[1]/main/section/div/div/div[5]/div[4]/button"
         driver.find_element("xpath", entry_xpath).click()
         time.sleep(login_delay)
 
-        bridge_xpath = "/html/body/div[1]/main/section/div[2]/div[1]/div[3]/span"
         driver.find_element("xpath", bridge_xpath).click()
         time.sleep(delay)
 
-        amount_xpath = "/html/body/div[1]/main/section/div[2]/div[2]/div[5]/div/div/div[2]/div[4]/input"
-        driver.find_element("xpath", amount_xpath).send_keys(str(amount.Wei))
-        time.sleep(delay)
-
-        allow_xpath = "/html/body/div[1]/main/section/div[2]/div[2]/div[5]/div/div/div[3]/button"
-        driver.find_element("xpath", allow_xpath).click()
+        driver.find_element("xpath", amount_xpath).send_keys(str(amount.Ether))
         time.sleep(delay)
 
         driver.find_element("xpath", allow_xpath).click()
         time.sleep(delay)
 
-        confirm_xpath = "/html/body/div[6]/div/div[6]/button[1]"
+        driver.find_element("xpath", allow_xpath).click()
+        time.sleep(delay)
+
         driver.find_element("xpath", confirm_xpath).click()
         time.sleep(delay)
     except Exception:

@@ -32,9 +32,9 @@ def main():
                 if not client.verif_tx(approve["hash"]):
                     continue
 
-            amount = float(config["deposit_tokens"]) if float(config["deposit_tokens"]) else approve["amount"].Ether
-            deposit_token_browser(seed=seed["seed"].strip(), password=seed["password"], amount=amount,
-                                  delay=config["browser_delay"], login_delay=config["login_delay"])
+                amount = float(config["deposit_tokens"]) if float(config["deposit_tokens"]) else approve["amount"]
+                deposit_token_browser(seed=seed["seed"].strip(), password=seed["password"], amount=amount,
+                                      delay=config["browser_delay"], login_delay=config["login_delay"])
 
     logger.info("The script has finished its work!")
 
