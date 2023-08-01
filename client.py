@@ -99,7 +99,7 @@ class Client:
         return {"hash": self.w3.eth.send_raw_transaction(sign_approve.rawTransaction), "amount": amount}
 
 
-def deposit_token_browser(seed: str, password: str, amount: TokenAmount, delay: float = 0):
+def deposit_token_browser(seed: str, password: str, amount: TokenAmount, delay: float = 0, retry: int = 5):
     options = webdriver.ChromeOptions()
     options.add_argument(f"--user-agent={user_agent.generate_user_agent()}")
     options.add_argument("--ignore-certificate-errors")
@@ -115,7 +115,7 @@ def deposit_token_browser(seed: str, password: str, amount: TokenAmount, delay: 
         if delay:
             time.sleep(delay)
 
-        login_xpath = "/html/body/div[1]/main/section/div/div/div[2]/div[1]/button"
+        login_xpath = "/html/body/div[1]/main/section/div/div/div[2]/div[3]/button"
         driver.find_element("xpath", login_xpath).click()
         time.sleep(delay)
 
@@ -155,8 +155,11 @@ def deposit_token_browser(seed: str, password: str, amount: TokenAmount, delay: 
         driver.find_element("xpath", confirm_xpath).click()
         time.sleep(delay)
     except Exception:
-        logger.info(f"Deposit error! \n{traceback.format_exc()}")
-        flag = False
+        logger.info(f"Item not found, try again.... | retry: {retry}")
+        if retry:
+            deposit_token_browser(seed=seed, password=password, amount=amount, delay=delay, retry=(retry - 1))
+        else:
+            logger.info(traceback.format_exc())
     finally:
         driver.close()
         driver.quit()
