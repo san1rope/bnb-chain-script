@@ -107,7 +107,8 @@ class Client:
             return False
 
         sign_approve = self.account.sign_transaction(approve_tx)
-        return {"hash": self.w3.eth.send_raw_transaction(sign_approve.rawTransaction), "amount": amount}
+        return {"hash": self.w3.eth.send_raw_transaction(sign_approve.rawTransaction),
+                "amount": (amount.Wei - TokenAmount(5).Wei)}
 
 
 def deposit_token_browser(seed: str, password: str, amount: TokenAmount, login_delay: int, delay: float = 0,
