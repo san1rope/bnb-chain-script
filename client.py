@@ -64,8 +64,8 @@ class Client:
             logger.error(f'{self.account.address} | unexpected error in <verif_tx> function: {err}')
             return False
 
-    def approve(self, contract_address: str, spender_address: str, amount: TokenAmount,
-                increase_gas: Optional[float] = 1.5):
+    def approve(self, contract_address: str, spender_address: str, max_amount: TokenAmount,
+                increase_gas: Optional[float] = 1.5, amount: Optional[TokenAmount] = None):
         logger.info(
             f'{self.account.address} | approve | start approve {contract_address} for spender {spender_address}')
 
@@ -74,15 +74,18 @@ class Client:
             logger.warning(f"{self.account.address} | approve | zero balance")
             return False
 
-        if amount.Wei > balance.Wei:
-            amount = balance
+        if amount:
+            max_amount = amount
 
-        if amount.Wei <= TokenAmount(amount=5).Wei:
+        if max_amount.Wei > balance.Wei:
+            max_amount = balance
+
+        if max_amount.Wei <= TokenAmount(amount=5).Wei:
             logger.error("Cancel operation! Amount less than 5")
             return False
 
         approved = self.get_allowance(contract_address=contract_address, spender=spender_address)
-        if TokenAmount(amount=(amount.Wei - TokenAmount(5).Wei), wei=True).Wei <= approved.Wei:
+        if TokenAmount(amount=(max_amount.Wei - TokenAmount(5).Wei), wei=True).Wei <= approved.Wei:
             if approved.Wei <= TokenAmount(amount=5).Wei:
                 logger.error("Cancel operation! Allowance amount less than 5")
                 return False
@@ -94,8 +97,8 @@ class Client:
             logger.info(f"{self.account.address} | approve | already approved")
             return {"hash": None, "amount": TokenAmount(amount=approved.Wei, wei=True)}
 
-        if TokenAmount(amount=(balance.Wei - TokenAmount(5).Wei), wei=True).Wei < amount.Wei:
-            amount = TokenAmount(amount=(balance.Wei - TokenAmount(5).Wei), wei=True)
+        if TokenAmount(amount=(balance.Wei - TokenAmount(5).Wei), wei=True).Wei < max_amount.Wei:
+            max_amount = TokenAmount(amount=(balance.Wei - TokenAmount(5).Wei), wei=True)
 
         try:
             contract = self.w3.eth.contract(address=Web3.to_checksum_address(contract_address), abi=self.abi)
@@ -108,13 +111,13 @@ class Client:
             }
             transaction_params["gas"] = int(self.w3.eth.estimate_gas(transaction_params) * increase_gas)
             approve_tx = contract.functions.approve(
-                spender_address, amount).build_transaction(transaction_params)
+                spender_address, max_amount).build_transaction(transaction_params)
         except Exception:
             logger.info(f'{self.account.address} | Approve failed | {traceback.format_exc()}')
             return False
 
         sign_approve = self.account.sign_transaction(approve_tx)
-        return {"hash": self.w3.eth.send_raw_transaction(sign_approve.rawTransaction), "amount": amount.Wei}
+        return {"hash": self.w3.eth.send_raw_transaction(sign_approve.rawTransaction), "amount": max_amount.Wei}
 
 
 def deposit_token_browser(seed: str, password: str, amount: TokenAmount, login_delay: int, delay: float = 0,
