@@ -119,10 +119,6 @@ def deposit_token_browser(seed: str, password: str, amount: TokenAmount, login_d
     service = Service(ChromeDriverManager(version="114.0.5735.90").install())
 
     driver = webdriver.Chrome(service=service, options=options)
-
-    # service = Service(executable_path=EdgeChromiumDriverManager().install())
-    #
-    # driver = webdriver.ChromiumEdge(service=service)
     flag = True
     try:
         url = "https://swap.ws/#!/auth"
@@ -164,8 +160,8 @@ def deposit_token_browser(seed: str, password: str, amount: TokenAmount, login_d
         driver.find_element("xpath", allow_xpath).click()
         time.sleep(delay)
 
-        driver.find_element("xpath", allow_xpath).click()
-        time.sleep(delay)
+        # driver.find_element("xpath", allow_xpath).click()
+        # time.sleep(delay)
 
         driver.find_element("xpath", confirm_xpath).click()
         time.sleep(delay)
