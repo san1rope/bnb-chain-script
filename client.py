@@ -116,14 +116,19 @@ def deposit_token_browser(seed: str, password: str, amount: TokenAmount, login_d
         options = webdriver.ChromeOptions()
         options.add_argument(f"--user-agent={user_agent.generate_user_agent()}")
         options.add_argument("--ignore-certificate-errors")
-        options.add_argument("--headless")
+
+        if config["headless"]:
+            options.add_argument("--headless")
 
         service = Service(ChromeDriverManager(version="114.0.5735.90").install())
 
         driver = webdriver.Chrome(service=service, options=options)
     elif config["browser"] == "edge":
         options = webdriver.EdgeOptions()
-        options.add_argument("headless")
+        options.add_argument(f"user-agent={user_agent.generate_user_agent()}")
+
+        if config["headless"]:
+            options.add_argument("--headless")
 
         service = Service(EdgeChromiumDriverManager().install())
 
