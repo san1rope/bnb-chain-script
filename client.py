@@ -158,7 +158,7 @@ def deposit_token_browser(seed: str, password: str, amount: TokenAmount, login_d
         time.sleep(delay)
 
         driver.find_element("xpath", allow_xpath).click()
-        time.sleep(delay)
+        time.sleep(delay * 2)
 
         # driver.find_element("xpath", allow_xpath).click()
         # time.sleep(delay)
