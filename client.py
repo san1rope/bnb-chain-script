@@ -81,12 +81,14 @@ class Client:
             max_amount = balance
 
         if max_amount.Wei <= TokenAmount(amount=5).Wei:
+            print("1")
             logger.error("Cancel operation! Amount less than 5")
             return False
 
         approved = self.get_allowance(contract_address=contract_address, spender=spender_address)
         if TokenAmount(amount=(max_amount.Wei - TokenAmount(5).Wei), wei=True).Wei <= approved.Wei:
             if approved.Wei <= TokenAmount(amount=5).Wei:
+                print("2")
                 logger.error("Cancel operation! Allowance amount less than 5")
                 return False
 
