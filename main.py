@@ -29,7 +29,8 @@ def main():
             continue
 
         approve = client.approve(
-            contract_address=contract_address, spender_address=bridge_contract_address, amount=max_amount)
+            contract_address=contract_address, spender_address=bridge_contract_address, max_amount=max_amount,
+            amount=amount)
         if approve:
             if approve["hash"]:
                 if not client.verif_tx(approve["hash"]):
