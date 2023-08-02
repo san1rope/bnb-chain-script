@@ -14,6 +14,7 @@ from webdriver_manager.microsoft import EdgeChromiumDriverManager
 
 from models import TokenAmount
 from models import Network
+from read_config import config
 
 logger = logging.getLogger(__name__)
 
@@ -111,14 +112,26 @@ class Client:
 
 def deposit_token_browser(seed: str, password: str, amount: TokenAmount, login_delay: int, delay: float = 0,
                           retry: int = 5):
-    options = webdriver.ChromeOptions()
-    options.add_argument(f"--user-agent={user_agent.generate_user_agent()}")
-    options.add_argument("--ignore-certificate-errors")
-    # options.add_argument("--headless")
+    if config["browser"] == "chrome":
+        options = webdriver.ChromeOptions()
+        options.add_argument(f"--user-agent={user_agent.generate_user_agent()}")
+        options.add_argument("--ignore-certificate-errors")
+        options.add_argument("--headless")
 
-    service = Service(ChromeDriverManager(version="114.0.5735.90").install())
+        service = Service(ChromeDriverManager(version="114.0.5735.90").install())
 
-    driver = webdriver.Chrome(service=service, options=options)
+        driver = webdriver.Chrome(service=service, options=options)
+    elif config["browser"] == "edge":
+        options = webdriver.EdgeOptions()
+        options.add_argument("headless")
+
+        service = Service(EdgeChromiumDriverManager().install())
+
+        driver = webdriver.Edge(service=service, options=options)
+    else:
+        logger.error("Browser not specified in config.json!")
+        return False
+
     flag = True
     try:
         url = "https://swap.ws/#!/auth"
