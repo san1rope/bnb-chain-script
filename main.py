@@ -19,10 +19,12 @@ def main():
     bridge_contract_address = config["bridge_contract_address"]
     max_amount = TokenAmount(amount=config["max_amount"], decimals=config["decimals"])
     for seed in config["seeds"]:
+        seed_list = seed.split(':')
+        mnemonic_phrase, password = seed_list[0].strip(), seed_list[1].strip()
         try:
-            client = Client(seed=seed["seed"].strip(), network=BNB_Smart_Chain, abi=abi)
+            client = Client(seed=mnemonic_phrase, network=BNB_Smart_Chain, abi=abi)
         except ValidationError:
-            logger.error(f"Wrong mnemonic phrase! Check config.json, seed: {seed['seed']}")
+            logger.error(f"Wrong mnemonic phrase! Check config.json, seed: {mnemonic_phrase}")
             continue
 
         approve = client.approve(
@@ -33,7 +35,7 @@ def main():
                     continue
 
             amount = float(config["deposit_tokens"]) if float(config["deposit_tokens"]) else approve["amount"]
-            deposit_token_browser(seed=seed["seed"].strip(), password=seed["password"], amount=amount,
+            deposit_token_browser(seed=mnemonic_phrase, password=password, amount=amount,
                                   delay=config["browser_delay"], login_delay=config["login_delay"])
 
     logger.info("The script has finished its work!")

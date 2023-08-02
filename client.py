@@ -127,9 +127,6 @@ def deposit_token_browser(seed: str, password: str, amount: TokenAmount, login_d
             time.sleep(delay)
 
         login_xpath = "/html/body/div[1]/main/section/div/div/div[2]/div[3]/button"
-        driver.find_element("xpath", login_xpath).click()
-        time.sleep(delay)
-
         password_xpath = "/html/body/div[1]/main/section/div/div/div[5]/div[1]/input"
         password_retry_xpath = "/html/body/div[1]/main/section/div/div/div[5]/div[2]/input"
         wallet_data_xpath = "/html/body/div[1]/main/section/div/div/div[5]/div[3]/textarea"
@@ -138,6 +135,9 @@ def deposit_token_browser(seed: str, password: str, amount: TokenAmount, login_d
         amount_xpath = "/html/body/div[1]/main/section/div[2]/div[2]/div[5]/div/div/div[2]/div[4]/input"
         allow_xpath = "/html/body/div[1]/main/section/div[2]/div[2]/div[5]/div/div/div[3]/button"
         confirm_xpath = "/html/body/div[6]/div/div[6]/button[1]"
+
+        driver.find_element("xpath", login_xpath).click()
+        time.sleep(delay)
 
         driver.find_element("xpath", password_xpath).send_keys(password)
         time.sleep(delay)
@@ -159,9 +159,6 @@ def deposit_token_browser(seed: str, password: str, amount: TokenAmount, login_d
 
         driver.find_element("xpath", allow_xpath).click()
         time.sleep(delay * 2)
-
-        # driver.find_element("xpath", allow_xpath).click()
-        # time.sleep(delay)
 
         driver.find_element("xpath", confirm_xpath).click()
         time.sleep(delay)
