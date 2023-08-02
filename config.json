@@ -1,10 +1,8 @@
 {
   "browser": "edge",
-  "headless": false,
-  "contract_address": "0x7F9Ad7a5854658d984924E868187B2135514fb88",
-  "bridge_contract_address": "0xbAac55fdbB253b7D1b6A60763e8FFe8D3A451C0c",
+  "headless": true,
+  "max_workers": 2,
   "decimals": 18,
-  "max_amount": 100,
   "deposit_tokens": 0,
   "browser_delay": 3,
   "login_delay": 10,

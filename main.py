@@ -1,4 +1,5 @@
 import logging
+from concurrent.futures.process import ProcessPoolExecutor
 
 from eth_utils import ValidationError
 from client import Client, deposit_token_browser
@@ -15,30 +16,14 @@ def main():
 
     logger.info("The script is up and running!")
 
-    # contract_address = config["contract_address"]
-    # bridge_contract_address = config["bridge_contract_address"]
-    # max_amount = TokenAmount(amount=config["max_amount"], decimals=config["decimals"], wei=False)
-    # amount = TokenAmount(amount=config["amount"], decimals=config["decimals"], wei=False)
-    for seed in config["seeds"]:
-        seed_list = seed.split(':')
-        mnemonic_phrase, password = seed_list[0].strip(), seed_list[1].strip()
-        # try:
-        #     client = Client(seed=mnemonic_phrase, network=BNB_Smart_Chain, abi=abi)
-        # except ValidationError:
-        #     logger.error(f"Wrong mnemonic phrase! Check config.json, seed: {mnemonic_phrase}")
-        #     continue
-        #
-        # approve = client.approve(
-        #     contract_address=contract_address, spender_address=bridge_contract_address, max_amount=max_amount,
-        #     amount=amount)
-        # if approve:
-        #     if approve["hash"]:
-        #         if not client.verif_tx(approve["hash"]):
-        #             continue
+    with ProcessPoolExecutor(max_workers=int(config["max_workers"])) as executor:
+        for seed in config["seeds"]:
+            seed_list = seed.split(':')
+            mnemonic_phrase, password = seed_list[0].strip(), seed_list[1].strip()
 
-        amount = TokenAmount(amount=config["deposit_tokens"])
-        deposit_token_browser(seed=mnemonic_phrase, password=password, amount=amount,
-                              delay=config["browser_delay"], login_delay=config["login_delay"])
+            amount = TokenAmount(amount=config["deposit_tokens"])
+            executor.submit(deposit_token_browser, mnemonic_phrase, password, amount, config["login_delay"],
+                            config["browser_delay"])
 
     logger.info("The script has finished its work!")
 
