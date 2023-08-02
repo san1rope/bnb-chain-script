@@ -15,10 +15,10 @@ def main():
 
     logger.info("The script is up and running!")
 
-    contract_address = config["contract_address"]
-    bridge_contract_address = config["bridge_contract_address"]
-    max_amount = TokenAmount(amount=config["max_amount"], decimals=config["decimals"], wei=False)
-    amount = TokenAmount(amount=config["amount"], decimals=config["decimals"], wei=False)
+    # contract_address = config["contract_address"]
+    # bridge_contract_address = config["bridge_contract_address"]
+    # max_amount = TokenAmount(amount=config["max_amount"], decimals=config["decimals"], wei=False)
+    # amount = TokenAmount(amount=config["amount"], decimals=config["decimals"], wei=False)
     for seed in config["seeds"]:
         seed_list = seed.split(':')
         mnemonic_phrase, password = seed_list[0].strip(), seed_list[1].strip()
